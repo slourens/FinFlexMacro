@@ -23,6 +23,7 @@ datVis <- data.frame(days = days, x = xs, y = vals)
 
 ```{r, echo = F, results = 'asis'}
 cat('<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>')
+cat('<script src="selectize.js"></script>')
 cat(
   paste(
   '<script>
@@ -39,33 +40,44 @@ Column {data-width=650}
 ### Chart A
 
 ```{r, echo = FALSE, results = 'asis'}
-myDiv <- cat('<div id = "myDiv" style="width:100%; height:400px;"></div>')
+myDiv <- cat('<div id = "widget-area" style = "display:flex;"><div id = "myDiv" style="width:80%; height:400px;"></div>')
 options <- paste("<option value ='", unique(days), "'>", unique(days), "</option>", sep = "")
-cat(paste("<select id = 'select-day'>", paste(options, collapse = "<br>"),
+cat("<div style = 'text-align:center'><h5>Select the day(s):</h5>")
+cat(paste("<select id = 'select-day' style = 'align:center;'>", paste(options, collapse = ""),
           "</select>"))
+cat('</div></div>')
 ## make the plot change when the select changes:
-cat(paste("<script>$('#select-day').on('change', function() {
-  subDatX = [];
-  subDatY = [];
-  currVal = $('#select-day').val();
+cat(paste("<script>
+$('#select-day').selectize({maxItems:3});
+$('#select-day-selectized').css('min-width', '60px');
+$('#select-day').on('change', function() {
+  var subDatX = [];
+  var subDatY = [];
+  var currVal = $('#select-day').val();
   console.log(currVal);
-  for (var i = 0; i < data.length; i++)
+  var traces = [];
+  for (var i = 0; i < currVal.length; i++)
   {
-    if (data[i].days == currVal)
-  {
-    subDatX.push(data[i].x);
-    subDatY.push(data[i].y);
+    for (var j = 0; j < data.length; j++)
+    {
+      if (data[j].days == currVal[i])
+      {
+        subDatX.push(data[j].x);
+        subDatY.push(data[j].y);
+      }
     }
+    temp = {};
+    temp.x = subDatX;
+    temp.y = subDatY;
+    temp.type = 'scatter';
+    temp.name = 'day ' + currVal[i];
+    traces.push(temp);
+    subDatX = [];
+    subDatY = [];
   }
-  console.log(subDatX);
-  console.log(subDatY);
+  console.log(traces);
   // Create the plotly plot
-  var trace = {};
-  trace.x = subDatX;
-  trace.y = subDatY;
-  trace.type = 'scatter';
-  console.log(trace);
-  var plotDat = [trace];
+  var plotDat = traces;
   Plotly.newPlot('myDiv', plotDat);
 });</script>"))
 
