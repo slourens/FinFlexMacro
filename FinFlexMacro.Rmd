@@ -10,15 +10,23 @@ output:
 library(flexdashboard)
 library(plotly)
 library(jsonlite)
+library(dplyr)
+library(tidyr)
 ```
 
 ```{r data-create, echo = F}
-## create fake data to test idea
-days <- c(rep(1, 5), rep(2, 5), rep(3, 5),
-          rep(4, 5))
-xs <- rep(c("1 month", "2 month", "3 month", "6 month", "1 year"), times = 4)
-vals <- rnorm(20, 0, 1)
-datVis <- data.frame(days = days, x = xs, y = vals)
+intDat <- read.csv('intDat.csv', header = TRUE, stringsAsFactors = FALSE)
+names(intDat) <- c("date", "1 month",
+                   "2 month", "3 month",
+                   "6 month", "1 year",
+                   "2 year", "3 year",
+                   "5 year", "7 year",
+                   "10 year", "20 year",
+                   "30 year")
+
+intDat[intDat == "N/A"] <- NA
+## organize data to long format
+intDat <- intDat %>% gather(x, y, -date)
 ```
 
 ```{r, echo = F, results = 'asis'}
@@ -27,7 +35,7 @@ cat('<script src="selectize.js"></script>')
 cat(
   paste(
   '<script>
-    var data = ',toJSON(datVis),';
+    var data = ',toJSON(intDat),';
   </script>'
   , sep="")
 )
@@ -41,14 +49,14 @@ Column {data-width=650}
 
 ```{r, echo = FALSE, results = 'asis'}
 myDiv <- cat('<div id = "widget-area" style = "display:flex;"><div id = "myDiv" style="width:80%; height:400px;"></div>')
-options <- paste("<option value ='", unique(days), "'>", unique(days), "</option>", sep = "")
+options <- paste("<option value ='", unique(intDat$date), "'>", unique(intDat$date), "</option>", sep = "")
 cat("<div style = 'text-align:center'><h5>Select the day(s):</h5>")
 cat(paste("<select id = 'select-day' style = 'align:center;'>", paste(options, collapse = ""),
           "</select>"))
 cat('</div></div>')
 ## make the plot change when the select changes:
 cat(paste("<script>
-$('#select-day').selectize({maxItems:3});
+$('#select-day').selectize({maxItems:8});
 $('#select-day-selectized').css('min-width', '60px');
 $('#select-day').on('change', function() {
   var subDatX = [];
@@ -60,7 +68,7 @@ $('#select-day').on('change', function() {
   {
     for (var j = 0; j < data.length; j++)
     {
-      if (data[j].days == currVal[i])
+      if (data[j].date == currVal[i])
       {
         subDatX.push(data[j].x);
         subDatY.push(data[j].y);
@@ -78,7 +86,8 @@ $('#select-day').on('change', function() {
   console.log(traces);
   // Create the plotly plot
   var plotDat = traces;
-  Plotly.newPlot('myDiv', plotDat);
+  var layout = {width: 550, height: 400};
+  Plotly.newPlot('myDiv', plotDat, layout, {displayModeBar: false});
 });</script>"))
 
 ```
