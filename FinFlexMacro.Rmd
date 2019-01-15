@@ -1,0 +1,89 @@
+---
+title: "FinFlexMacro"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(jsonlite)
+```
+
+```{r data-create, echo = F}
+## create fake data to test idea
+days <- c(rep(1, 5), rep(2, 5), rep(3, 5),
+          rep(4, 5))
+xs <- rep(c("1 month", "2 month", "3 month", "6 month", "1 year"), times = 4)
+vals <- rnorm(20, 0, 1)
+datVis <- data.frame(days = days, x = xs, y = vals)
+```
+
+```{r, echo = F, results = 'asis'}
+cat('<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>')
+cat(
+  paste(
+  '<script>
+    var data = ',toJSON(datVis),';
+  </script>'
+  , sep="")
+)
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r, echo = FALSE, results = 'asis'}
+myDiv <- cat('<div id = "myDiv" style="width:100%; height:400px;"></div>')
+options <- paste("<option value ='", unique(days), "'>", unique(days), "</option>", sep = "")
+cat(paste("<select id = 'select-day'>", paste(options, collapse = "<br>"),
+          "</select>"))
+## make the plot change when the select changes:
+cat(paste("<script>$('#select-day').on('change', function() {
+  subDatX = [];
+  subDatY = [];
+  currVal = $('#select-day').val();
+  console.log(currVal);
+  for (var i = 0; i < data.length; i++)
+  {
+    if (data[i].days == currVal)
+  {
+    subDatX.push(data[i].x);
+    subDatY.push(data[i].y);
+    }
+  }
+  console.log(subDatX);
+  console.log(subDatY);
+  // Create the plotly plot
+  var trace = {};
+  trace.x = subDatX;
+  trace.y = subDatY;
+  trace.type = 'scatter';
+  console.log(trace);
+  var plotDat = [trace];
+  Plotly.newPlot('myDiv', plotDat);
+});</script>"))
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
