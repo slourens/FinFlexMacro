@@ -27,6 +27,9 @@ names(intDat) <- c("date", "1 month",
 intDat[intDat == "N/A"] <- NA
 ## organize data to long format
 intDat <- intDat %>% gather(x, y, -date)
+intDat <- intDat %>% separate(date, "/", into = c('month', 'day', 'year'), remove = FALSE) %>% mutate(year = ifelse(as.numeric(year) <= 19, paste("20", year, sep = ""),
+                                                                                                                    paste("19", year, sep = ""))) %>%
+  mutate(date = paste(month, day, year, sep = "/"))
 ```
 
 ```{r, echo = F, results = 'asis'}
@@ -45,10 +48,10 @@ cat(
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Yield Curve Data
 
 ```{r, echo = FALSE, results = 'asis'}
-myDiv <- cat('<div id = "widget-area" style = "display:flex;"><div id = "myDiv" style="width:80%; height:400px;"></div>')
+myDiv <- cat('<div id = "widget-area" style = "display:flex;"><div id = "plot-div" style="width:80%; height:400px;"></div>')
 options <- paste("<option value ='", unique(intDat$date), "'>", unique(intDat$date), "</option>", sep = "")
 cat("<div style = 'text-align:center'><h5>Select the day(s):</h5>")
 cat(paste("<select id = 'select-day' style = 'align:center;'>", paste(options, collapse = ""),
@@ -56,14 +59,21 @@ cat(paste("<select id = 'select-day' style = 'align:center;'>", paste(options, c
 cat('</div></div>')
 ## make the plot change when the select changes:
 cat(paste("<script>
-$('#select-day').selectize({maxItems:8});
+$('#select-day').selectize({maxItems:8, theme: 'links'});
 $('#select-day-selectized').css('min-width', '60px');
+Plotly.plot('plot-div', [], {margin: {
+t: 40, //top margin
+l: 50, //left margin
+r: 20, //right margin
+b: 100 //bottom margin
+}, yaxis: {range: [0, 10]}}, {displayModeBar: false});
 $('#select-day').on('change', function() {
   var subDatX = [];
   var subDatY = [];
   var currVal = $('#select-day').val();
-  console.log(currVal);
   var traces = [];
+  if (currVal != null)
+  {
   for (var i = 0; i < currVal.length; i++)
   {
     for (var j = 0; j < data.length; j++)
@@ -78,16 +88,26 @@ $('#select-day').on('change', function() {
     temp.x = subDatX;
     temp.y = subDatY;
     temp.type = 'scatter';
-    temp.name = 'day ' + currVal[i];
+    temp.name = 'date: ' + currVal[i];
     traces.push(temp);
     subDatX = [];
     subDatY = [];
   }
-  console.log(traces);
   // Create the plotly plot
   var plotDat = traces;
-  var layout = {width: 550, height: 400};
-  Plotly.newPlot('myDiv', plotDat, layout, {displayModeBar: false});
+  } else {
+    var plotDat = [];
+  }
+  var layout = {margin: {
+t: 40, //top margin
+l: 50, //left margin
+r: 20, //right margin
+b: 100 //bottom margin
+},
+title: '',
+xaxis: {title: 'Term'},
+yaxis: {title: 'Rate'}};
+  Plotly.newPlot('plot-div', plotDat, layout, {displayModeBar: false});
 });</script>"))
 
 ```
